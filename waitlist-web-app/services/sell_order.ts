@@ -6,6 +6,7 @@ import { useAccount, useWalletClient, usePublicClient } from "wagmi";
 import { useEnsureCorrectChain } from "@/utils/chainUtils";
 import { toast } from "react-hot-toast";
 import { api } from "@/config";
+import { getFeeQuote } from "./fee_quote";
 const tokenAbi = parseAbi([
     "function name() view returns (string)",
     "function decimals() view returns (uint8)",
@@ -59,11 +60,7 @@ export function useSellOrderMutation() {
             const orderProcessorAddress = (orderProcessorData.networkAddresses as Record<string, string>)[String(chainId)] as `0x${string}`;
             if (!orderProcessorAddress) throw new Error("Missing order processor address");
 
-            const dinariClient = new Dinari({
-                apiKeyID: process.env.NEXT_PUBLIC_DINARI_API_KEY_ID,
-                apiSecretKey: process.env.NEXT_PUBLIC_DINARI_API_SECRET_KEY,
-                environment: "sandbox",
-            });
+            // Fee quotes now handled by backend proxy to avoid CORS issues
 
             const multiCallBytes: string[] = [];
             const executableOrders: any[] = [];
@@ -160,7 +157,7 @@ export function useSellOrderMutation() {
                 };
         
 
-                const feeQuoteResponse = await dinariClient.v2.accounts.orders.stocks.eip155.getFeeQuote(accountId, _order);
+                const feeQuoteResponse = await getFeeQuote({ accountId, order: _order });
                 const orderFee = BigInt(feeQuoteResponse.order_fee_contract_object.fee_quote.fee);
                 totalFees += orderFee;
                 orders.push({ orderParams, feeQuoteResponse });

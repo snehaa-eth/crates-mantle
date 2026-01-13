@@ -188,3 +188,31 @@ exports.getTransactionById = async (req, res, next) => {
     next(new ErrorResponse("Failed to fetch transaction details", 500));
   }
 };
+
+// Get fee quote for sell order
+exports.getFeeQuote = async (req, res, next) => {
+  try {
+    const { accountId, order } = req.body;
+
+    if (!accountId || !order) {
+      return next(new ErrorResponse("accountId and order are required", 400));
+    }
+
+    const Dinari = require("@dinari/api-sdk");
+    const client = new Dinari({
+      apiKeyID: process.env.DINARI_API_KEY_ID,
+      apiSecretKey: process.env.DINARI_API_SECRET_KEY,
+      environment: "sandbox",
+    });
+
+    const feeQuoteResponse = await client.v2.accounts.orders.stocks.eip155.getFeeQuote(accountId, order);
+
+    res.status(200).json({
+      success: true,
+      data: feeQuoteResponse,
+    });
+  } catch (error) {
+    console.error("Fee quote error:", error);
+    return next(new ErrorResponse("Failed to get fee quote", 500));
+  }
+};

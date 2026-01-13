@@ -10,5 +10,7 @@ router.get('/user/:userId', transactionController.getTransactionsByUser);
 router.get('/crate/:crateId', transactionController.getTransactionsByCrate);
 // Get transaction by ID
 router.get('/:id', transactionController.getTransactionById);
+// Get fee quote for sell order
+router.post('/fee-quote', transactionController.getFeeQuote);
 
 module.exports = router;
