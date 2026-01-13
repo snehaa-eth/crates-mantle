@@ -3,8 +3,9 @@ const Crate = require("../models/basket.schema");
 const Transaction = require("../models/transaction.schema");
 const ErrorResponse = require("../utils/errorResponse");
 const client = require("../utils/client");
-const { Wallet } = require("ethers");
+const { Wallet, Contract, JsonRpcProvider } = require("ethers");
 const { syncUserWithDinari } = require("../services/userSyncServiceDinari");
+const { TOKEN_ABI } = require("../utils/constants");
 
 exports.registerUser = async (req, res, next) => {
   try {
@@ -348,34 +349,28 @@ exports.fundAccountWallet = async (req, res, next) => {
     const { wallet, chain_id } = req.body;
     console
     let user = await User.findOne({ wallet });
-
-
-
     if (!user) {
       return next(new ErrorResponse("User does not exist", 404));
     }
-    console.log(user)
 
     let { dinari_account_id, lastDripAt } = user;
 
     if (!dinari_account_id) {
       return next(new ErrorResponse("User does not have account id", 404));
     }
-    // if (
-    //   lastDripAt &&
-    //   Date.now() - new Date(lastDripAt).getTime() < 12 * 60 * 60 * 1000
-    // ) {
-    //   return next(
-    //     new ErrorResponse("Cooling period active. Try again later.", 429)
-    //   );
-    // }
+    if (
+      lastDripAt &&
+      Date.now() - new Date(lastDripAt).getTime() < 12 * 60 * 60 * 1000
+    ) {
+      return next(
+        new ErrorResponse("Cooling period active. Try again later.", 429)
+      );
+    }
     const balances = await client.v2.accounts.getCashBalances(dinari_account_id);
-    console.log(balances)
     const chainBalance = balances.find((b) => b.chain_id === chain_id && b.symbol === "mockUSD");
     const mockUSDBalance = chainBalance ? Number(chainBalance.amount) : 0;
-    console.log(mockUSDBalance)
+
     if (mockUSDBalance >= 500) {
-      console.log("here3")
       return next(
         new ErrorResponse(
           `Balance too high (${mockUSDBalance}). Cannot drip more tokens.`,
@@ -383,18 +378,14 @@ exports.fundAccountWallet = async (req, res, next) => {
         )
       );
     }
-    console.log("here2")
-    console.log("here",chain_id)
     let depositRes = await client.v2.accounts.mintSandboxTokens(
-      "0199e8b9-d418-7421-8c6d-3361cc01ed4f",{chain_id:'eip155:11155111'}
+      dinari_account_id,
+      { chain_id }
     );
-    console.log(depositRes)
     user.lastDripAt = new Date();
     await user.save();
-    const balances1 = await client.v2.accounts.getCashBalances(dinari_account_id);
-    console.log(balances1)
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
       message: "Account funded successfully",
       data: { depositRes },
@@ -495,5 +486,98 @@ exports.getUserOrders = async (req, res, next) => {
   } catch (error) {
     console.error("Dinari fetch error:", error.message);
     next(new ErrorResponse("Failed to fetch user orders", 500));
+  }
+};
+
+exports.fundWalletFromTreasury = async (req, res, next) => {
+  try {
+
+    console.log("Funding wallet from treasury");
+    const { wallet } = req.body;
+    
+    if (!wallet) {
+      return next(new ErrorResponse("Wallet address is required", 400));
+    }
+
+    // Constants
+    const TREASURY_ADDRESS = "0xdaf0182de86f904918db8d07c7340a1efcdf8244";
+    const TOKEN_ADDRESS = "0x665b099132d79739462DfDe6874126AFe840F7a3";
+    const RPC_URL = process.env.RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/XvtthJ8YRg0riu9y90IdPJYSDm3HBtai";
+    const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
+    if (!TREASURY_PRIVATE_KEY) {
+      return next(new ErrorResponse("Treasury private key not configured", 500));
+    }
+
+    // Setup provider and signer
+    const provider = new JsonRpcProvider(RPC_URL);
+    const treasuryWallet = new Wallet(TREASURY_PRIVATE_KEY, provider);
+    
+    // Verify treasury wallet address matches
+    if (treasuryWallet.address.toLowerCase() !== TREASURY_ADDRESS.toLowerCase()) {
+      return next(new ErrorResponse("Treasury wallet address mismatch", 500));
+    }
+    
+    // Create token contract instance
+    const tokenContract = new Contract(TOKEN_ADDRESS, TOKEN_ABI, provider);
+    
+    // Check the balance of the recipient wallet
+    const balance = await tokenContract.balanceOf(wallet);
+    const decimals = await tokenContract.decimals();
+    const balanceFormatted = Number(balance) / Math.pow(10, Number(decimals));
+
+    console.log(`Wallet ${wallet} balance: ${balanceFormatted}`);
+
+    // Check if balance is greater than 20
+    if (balanceFormatted > 20) {
+      return res.status(200).json({
+        success: true,
+        message: `Balance (${balanceFormatted}) is greater than 20. No drip needed.`,
+        data: { balance: balanceFormatted },
+      });
+    }
+
+    // Calculate amount to transfer (enough to bring balance to a reasonable level)
+    // For example, transfer enough to have 100 tokens total
+    const targetBalance = 100;
+    const amountToTransfer = targetBalance - balanceFormatted;
+    
+    if (amountToTransfer <= 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No transfer needed",
+        data: { balance: balanceFormatted },
+      });
+    }
+
+    // Convert amount to token units (with decimals)
+    const amountInWei = BigInt(Math.floor(amountToTransfer * Math.pow(10, Number(decimals))));
+
+    // Create contract instance with signer for transactions
+    const tokenContractWithSigner = new Contract(TOKEN_ADDRESS, TOKEN_ABI, treasuryWallet);
+
+    // Execute transfer
+    console.log(`Transferring ${amountToTransfer} tokens from treasury to ${wallet}`);
+    const tx = await tokenContractWithSigner.transfer(wallet, amountInWei);
+    
+    console.log(`Transaction hash: ${tx.hash}`);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    
+    console.log(`Transaction confirmed in block: ${receipt.blockNumber}`);
+
+    res.status(200).json({
+      success: true,
+      message: "Tokens transferred successfully from treasury",
+      data: {
+        transactionHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        amountTransferred: amountToTransfer,
+        newBalance: targetBalance,
+      },
+    });
+  } catch (error) {
+    console.error("Fund wallet error:", error);
+    next(new ErrorResponse(error.message || "Failed to fund wallet from treasury", 500));
   }
 };
