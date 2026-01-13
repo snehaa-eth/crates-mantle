@@ -17,9 +17,15 @@ const syncUserWithDinari = async (user , client) => {
       user.name = dinariRes.name;
     }
   
-    if (!user.dinari_account_id) {
-      const account = await client.v2.entities.accounts.create(user.entity_id);
-      user.dinari_account_id = account.id;
+    if (!user.dinari_account_id && user.is_kyc_complete) {
+      try {
+        const account = await client.v2.entities.accounts.create(user.entity_id);
+        user.dinari_account_id = account.id;
+      } catch (error) {
+        // If KYC is not complete, account creation will fail
+        // We'll retry on next sync when KYC is complete
+        console.log('Account creation failed - likely due to incomplete KYC:', error.message);
+      }
     }
   
     await user.save();
