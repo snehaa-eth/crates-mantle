@@ -13,6 +13,7 @@ import { useUniversalWalletClient } from "@/utils/universalWalletClient";
 import { useEnsureCorrectChain } from "@/utils/chainUtils";
 import { toast } from "sonner";
 import { api } from "@/config";
+import { getFeeQuote } from "./fee_quote";
 
 const tokenAbi = parseAbi([
     "function name() view returns (string)",
@@ -154,11 +155,7 @@ export function useBuyOrderMutation() {
                 const askPrice = Number(quote.ask_price);
 
 
-                const feeQuoteResponse =
-                    await dinariClient.v2.accounts.orders.stocks.eip155.getFeeQuote(
-                        accountId,
-                        _order
-                    );
+                const feeQuoteResponse = await getFeeQuote({ accountId, order: _order });
 
                 const orderFee = BigInt(
                     feeQuoteResponse.order_fee_contract_object.fee_quote.fee
