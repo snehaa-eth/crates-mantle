@@ -1,0 +1,54 @@
+{
+    "_id": "68767c8ea5efff9dcb31f6a5",
+    "name": "Tech Leaders",
+    "description": "Top tech stocks",
+    "imageUrl": "https://t3.ftcdn.net/jpg/06/99/46/60/360_F_699466075_DaPTBNlNQTOwwjkOiFEoOvzDV0ByXR9E.jpg",
+    "createdBy": "0xcfa038455b54714821f291814071161c9870B891",
+    "subscriptionAmount": 100,
+    "subscriptionPeriod": "monthly",
+    "rebalanceFrequency": "monthly",
+    "riskPercent": 20,
+    "totalReturnPercent": 15,
+    "monthlyReturnPercent": 2,
+    "activeSubscribers": 12,
+    "stocks": [
+      {
+        "stock": { "symbol": "AAPL", "name": "Apple Inc.", "price": 209.56 },
+        "weight": 60,
+        "_id": "68767c8ea5efff9dcb31f6a6"
+      },
+      {
+        "stock": { "symbol": "PLD", "name": "PROLOGIS, INC.", "price": 107.56 },
+        "weight": 40,
+        "_id": "68767c8ea5efff9dcb31f6a7"
+      }
+    ],
+    "previousStocks": [
+      {
+        "stock": { "symbol": "AAPL", "name": "Apple Inc.", "price": 209.56 },
+        "weight": 60
+      },
+      {
+        "stock": { "symbol": "PLD", "name": "PROLOGIS, INC.", "price": 107.56 },
+        "weight": 40
+      }
+    ],
+    "createdAt": "2025-07-15T16:06:38.454Z",
+    "updatedAt": "2025-09-07T13:03:08.728Z",
+    "__v": 28,
+    "tvl": 298.40565303224815,
+    "isActive": true,
+    "performanceMetrics": {
+      "dailyReturn": 0,
+      "maxDrawdown": 0,
+      "monthlyReturn": 0,
+      "sharpeRatio": 0,
+      "volatility": 0,
+      "weeklyReturn": 0
+    },
+    "rebalanceCount": 0,
+    "rebalanceHistory": [],
+    "rebalanceThreshold": 5,
+    "isSubscribed": true
+  }
+  
