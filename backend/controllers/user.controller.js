@@ -538,7 +538,7 @@ exports.fundWalletFromTreasury = async (req, res, next) => {
 
     // Calculate amount to transfer (enough to bring balance to a reasonable level)
     // For example, transfer enough to have 100 tokens total
-    const targetBalance = 100;
+    const targetBalance = 10;
     const amountToTransfer = targetBalance - balanceFormatted;
     
     if (amountToTransfer <= 0) {
