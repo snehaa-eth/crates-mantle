@@ -69,9 +69,9 @@ This lets us focus on creating a **seamless and intuitive experience** for our u
 ## 🛠️ Technology Stack
 
 - **Core Infrastructure**: Dinari SDK (Dstocks, KYC, regulatory compliance)  
-- **Frontend**: Next.js / React (Wagmi, Viem)  
-- **Backend**: Node.js / Go / Python (choose based on your needs)  
-- **Database**: PostgreSQL / MongoDB  
-- **Smart Contracts**: Solidity + Uniswap v4 Hooks
+- **Frontend**: Next.js  
+- **Backend**: Node.js 
+- **Database**:  MongoDB  
+- **Smart Contracts**: Solidity
 
 ---
