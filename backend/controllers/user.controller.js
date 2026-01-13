@@ -500,7 +500,7 @@ exports.fundWalletFromTreasury = async (req, res, next) => {
     }
 
     // Constants
-    const TREASURY_ADDRESS = "0xdaf0182de86f904918db8d07c7340a1efcdf8244";
+    const TREASURY_ADDRESS = "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD";
     const TOKEN_ADDRESS = "0x665b099132d79739462DfDe6874126AFe840F7a3";
     const RPC_URL = process.env.RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/XvtthJ8YRg0riu9y90IdPJYSDm3HBtai";
     const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
