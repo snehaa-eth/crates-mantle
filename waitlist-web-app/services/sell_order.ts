@@ -1,5 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import Dinari from "@dinari/api-sdk";
+import { type Chain } from "@dinari/api-sdk/resources/v2/accounts";
+import { type OrderSide, type OrderTif, type OrderType } from "@dinari/api-sdk/resources/v2/accounts/orders";
 import { encodeFunctionData, formatUnits, parseAbi, parseEventLogs, parseUnits } from "viem";
 import orderProcessorData from "@/lib/sbt-deployments/v0.4.0/order_processor.json";
 import { useAccount, useWalletClient, usePublicClient } from "wagmi";
@@ -119,7 +121,7 @@ export function useSellOrderMutation() {
               
 
                     // scale = 10 ^ (assetTokenDecimals - allowedDecimalReduction)
-                    const scale = 10n ** BigInt(assetTokenDecimals - allowedDecimalReductionNum);
+                    const scale = BigInt(Math.pow(10, assetTokenDecimals - allowedDecimalReductionNum));
 
                     // Adjust the amount
                     actualAmount = (actualAmount / scale) * scale;
@@ -127,9 +129,9 @@ export function useSellOrderMutation() {
                 
 
                     // allowablePrecisionReduction = 10 ^ allowedDecimalReduction
-                    const allowablePrecisionReduction = 10n ** BigInt(allowedDecimalReductionNum);
+                    const allowablePrecisionReduction = BigInt(Math.pow(10, allowedDecimalReductionNum));
 
-                    if (actualAmount % allowablePrecisionReduction !== 0n) {
+                    if (actualAmount % allowablePrecisionReduction !== BigInt(0)) {
                         throw new Error(`Order amount precision exceeds max decimals of ${maxDecimals}`);
                     }
                 }
@@ -147,14 +149,18 @@ export function useSellOrderMutation() {
                 };
 
                 const _order = {
-                    chain_id: `eip155:${chainId}`,
-                    order_side: "SELL",
-                    order_tif: "DAY",
-                    order_type: "MARKET",
+                    chain_id: `eip155:${chainId}` as Chain,
+                    order_side: "SELL" as OrderSide,
+                    order_tif: "DAY" as OrderTif,
+                    order_type: "MARKET" as OrderType,
                     stock_id: _stock.dinari_id,
-                    payment_token: process.env.NEXT_PUBLIC_PAYMENTTOKEN,
-                    asset_token_quantity: Number(actualAmount).toString(),
+                    payment_token: process.env.NEXT_PUBLIC_PAYMENTTOKEN!,
+                    asset_token_quantity: Number(actualAmount),
                 };
+
+              
+
+
         
 
                 const feeQuoteResponse = await getFeeQuote({ accountId, order: _order });

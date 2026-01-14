@@ -7,7 +7,7 @@ interface FeeQuoteRequest {
 
 export const getFeeQuote = async ({ accountId, order }: FeeQuoteRequest) => {
   try {
-    const response = await api.post('/transaction/fee-quote', {
+    const response = await api.post('/transactions/fee-quote', {
       accountId,
       order,
     });

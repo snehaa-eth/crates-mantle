@@ -194,6 +194,10 @@ exports.getFeeQuote = async (req, res, next) => {
   try {
     const { accountId, order } = req.body;
 
+    console.log("Fee quote request received:");
+    console.log("accountId:", accountId);
+    console.log("order:", JSON.stringify(order, null, 2));
+
     if (!accountId || !order) {
       return next(new ErrorResponse("accountId and order are required", 400));
     }
@@ -205,14 +209,52 @@ exports.getFeeQuote = async (req, res, next) => {
       environment: "sandbox",
     });
 
-    const feeQuoteResponse = await client.v2.accounts.orders.stocks.eip155.getFeeQuote(accountId, order);
+    console.log("Calling Dinari API with:");
+    console.log("accountId:", accountId);
+    console.log("order object:", order);
+
+    // First check if the account exists
+    try {
+      console.log("Checking if account exists...");
+      const accountCheck = await client.v2.accounts.getCashBalances(accountId);
+      console.log("Account exists, balances:", accountCheck);
+    } catch (accountError) {
+      console.error("Account check failed:", accountError.message);
+      return next(new ErrorResponse(`Account validation failed: ${accountError.message}`, 400));
+    }
+
+    // Check if the stock exists
+    try {
+      console.log("Checking if stock exists...");
+      const stockCheck = await client.v2.marketData.stocks.retrieveCurrentPrice(order.stock_id);
+      console.log("Stock exists, price:", stockCheck);
+    } catch (stockError) {
+      console.error("Stock check failed:", stockError.message);
+      return next(new ErrorResponse(`Stock validation failed: ${stockError.message}`, 400));
+    }
+
+    // Try orderRequests.getFeeQuote instead of the eip155 endpoint
+    const feeQuoteResponse =
+    await client.v2.accounts.orderRequests.getFeeQuote(
+      accountId,
+     {
+       order_side: order.order_side,
+       order_type: order.order_type,
+       stock_id: order.stock_id,
+       asset_token_quantity: order.asset_token_quantity,
+       payment_token_quantity: order.payment_token_quantity,
+       chain_id: order.chain_id,
+     }
+    );
+  
 
     res.status(200).json({
       success: true,
       data: feeQuoteResponse,
     });
   } catch (error) {
-    console.error("Fee quote error:", error);
-    return next(new ErrorResponse("Failed to get fee quote", 500));
+    console.error("Fee quote error:", error.message || error);
+    console.error("Full error:", error);
+    return next(new ErrorResponse(`Failed to get fee quote: ${error.message || 'Unknown error'}`, 500));
   }
 };
