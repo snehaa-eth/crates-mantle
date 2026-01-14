@@ -98,10 +98,11 @@ export function useBuyOrderMutation() {
                 environment: "sandbox",
             });
 
-            totalAmountToBeInvested = parseUnits(
+            const totalAmountBigInt = parseUnits(
                 totalAmountToBeInvested,
                 6
-            ).toString();
+            );
+            totalAmountToBeInvested = totalAmountBigInt.toString();
 
 
 
@@ -156,12 +157,14 @@ export function useBuyOrderMutation() {
 
 
                 const feeQuoteResponse = await getFeeQuote({ accountId, order: _order });
+                console.log(feeQuoteResponse, "feeQuoteResponse");
 
-                const orderFee = BigInt(
-                    feeQuoteResponse.order_fee_contract_object.fee_quote.fee
+                const orderFee = parseUnits(
+                    feeQuoteResponse.fee,
+                    6
                 );
                 const orderFeeReadable = Number(formatUnits(orderFee, 6));
-                const paymentReadable = Number(formatUnits(paymentTokenQuantity, 6));
+                const paymentReadable = Number(formatUnits(BigInt(paymentTokenQuantity), 6));
 
                 let netSpend = paymentReadable - orderFeeReadable;
                 let minShares = netSpend / askPrice;
@@ -309,10 +312,10 @@ export function useBuyOrderMutation() {
                     }
                 }); if (orderEvents.length === 0) throw new Error("No OrderCreated events found");
 
-            const orderIds = orderEvents.map(event => event?.args?.id?.toString());
+            const orderIds = orderEvents.map((event: any) => event?.args?.id?.toString());
             console.log(orderIds, "orderIds");
             const bodyObject = {
-                totalAmountInvested: formatUnits(totalAmountToBeInvested, 6),
+                totalAmountInvested: formatUnits(totalAmountBigInt, 6),
                 type: "buy",
                 wallet: address,
                 crateId,

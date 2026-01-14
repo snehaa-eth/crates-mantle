@@ -28,7 +28,7 @@ const permitTypes = {
 };
 
 function getTokenAddress(chainId:any, tokens:any) {
-    const entry = tokens.find(token => token.split(":")[1] === String(chainId));
+    const entry = tokens.find((token: string) => token.split(":")[1] === String(chainId));
     return entry ? entry.split(":")[2] : null;
 }
 
@@ -164,7 +164,10 @@ export function useSellOrderMutation() {
         
 
                 const feeQuoteResponse = await getFeeQuote({ accountId, order: _order });
-                const orderFee = BigInt(feeQuoteResponse.order_fee_contract_object.fee_quote.fee);
+                const orderFee = parseUnits(
+                    feeQuoteResponse.fee,
+                    6
+                );
                 totalFees += orderFee;
                 orders.push({ orderParams, feeQuoteResponse });
                 // Permit signing
@@ -290,7 +293,7 @@ export function useSellOrderMutation() {
                     }
                 }); if (orderEvents.length === 0) throw new Error("No OrderCreated events found");
 
-            const orderIds = orderEvents.map(event => event?.args?.id?.toString());
+            const orderIds = orderEvents.map((event: any) => event?.args?.id?.toString());
             console.log(orderIds, "orderIds");
             // Push transaction to backend
             await api.post("/transactions", {

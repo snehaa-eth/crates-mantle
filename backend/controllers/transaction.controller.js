@@ -213,25 +213,6 @@ exports.getFeeQuote = async (req, res, next) => {
     console.log("accountId:", accountId);
     console.log("order object:", order);
 
-    // First check if the account exists
-    try {
-      console.log("Checking if account exists...");
-      const accountCheck = await client.v2.accounts.getCashBalances(accountId);
-      console.log("Account exists, balances:", accountCheck);
-    } catch (accountError) {
-      console.error("Account check failed:", accountError.message);
-      return next(new ErrorResponse(`Account validation failed: ${accountError.message}`, 400));
-    }
-
-    // Check if the stock exists
-    try {
-      console.log("Checking if stock exists...");
-      const stockCheck = await client.v2.marketData.stocks.retrieveCurrentPrice(order.stock_id);
-      console.log("Stock exists, price:", stockCheck);
-    } catch (stockError) {
-      console.error("Stock check failed:", stockError.message);
-      return next(new ErrorResponse(`Stock validation failed: ${stockError.message}`, 400));
-    }
 
     // Try orderRequests.getFeeQuote instead of the eip155 endpoint
     const feeQuoteResponse =
